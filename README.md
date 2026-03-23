@@ -242,10 +242,15 @@ npm run send -- order-completed order-123
 
 ## C# .NET Version
 
-The same checkpoint app is available as a standalone .NET 9 console app in [`dotnet/`](dotnet/). It implements the Direct HTTP API approach with zero NuGet dependencies:
+The same checkpoint app is available as standalone .NET 9 console apps in [`dotnet/`](dotnet/), with both options mirroring the TypeScript implementations:
 
 ```bash
-cd dotnet
+# Option 1: Direct HTTP API (no agent needed)
+cd dotnet/SendCheckpoint
+dotnet run -- order-placed order-123
+
+# Option 2: dd-trace-dotnet (requires agent)
+cd dotnet/SendCheckpointDdTrace
 dotnet run -- order-placed order-123
 ```
 

@@ -1,8 +1,20 @@
 # Datadog Checkpoints — C# .NET
 
-A C# .NET console app that sends sample/test checkpoints to Datadog's [Data Streams Monitoring](https://docs.datadoghq.com/data_streams/) for Business Transaction Tracking.
+C# .NET console apps that send sample/test checkpoints to Datadog's [Data Streams Monitoring](https://docs.datadoghq.com/data_streams/) for Business Transaction Tracking.
 
 Once checkpoints are sent, they appear under **Data Streams Monitoring > Transactions > Business Transaction Tracking** in Datadog.
+
+## Project structure
+
+```
+dotnet/
+├── SendCheckpoint/           # Option 1: Direct HTTP API (no agent needed)
+│   ├── SendCheckpoint.csproj
+│   └── Program.cs
+└── SendCheckpointDdTrace/    # Option 2: dd-trace-dotnet (requires agent)
+    ├── SendCheckpointDdTrace.csproj
+    └── Program.cs
+```
 
 ## Prerequisites
 
@@ -19,17 +31,19 @@ export DD_API_KEY="your-api-key"
 
 | Environment Variable | Description | Default |
 |---|---|---|
-| `DD_API_KEY` | **(Required)** Your Datadog API key | — |
+| `DD_API_KEY` | **(Required for Option 1)** Your Datadog API key | — |
 | `DD_SERVICE` | Service name reported to Datadog | `datadog-checkpoints-app` |
 | `DD_ENV` | Environment name reported to Datadog | `local` |
 
 ## Option 1: Direct HTTP API
 
-Sends checkpoints directly to the Datadog pipeline stats API endpoint using HTTPS. No Datadog Agent required — just an API key.
+Sends checkpoints directly to the Datadog pipeline stats API endpoint using HTTPS. No Datadog Agent required — just an API key. Zero NuGet dependencies.
 
 ### Usage
 
 ```bash
+cd SendCheckpoint
+
 # Send a checkpoint with default name
 dotnet run
 
@@ -65,62 +79,109 @@ Checkpoint sent successfully!
 Use Option 1 as the smoke test for the **direct pipeline stats intake** (no agent). The app prints the exact URL, HTTP **Status**, and **Response** body—those three lines tell you whether the call reached Datadog and how the API responded.
 
 1. **Set `DD_API_KEY`** (same key you use in the Datadog UI for your organisation).
-2. Run `dotnet run` (or pass a checkpoint / transaction id as shown in [Usage](#usage)).
+2. Run `dotnet run` from the `SendCheckpoint/` directory (or pass a checkpoint / transaction id as shown in [Usage](#usage)).
 3. **Read the output:**
    - **Status in the 2xx range** — the HTTP request was accepted by that intake host. If checkpoints still do not show up under **Data Streams Monitoring > Transactions**, confirm you are logged into the same Datadog **site** and org, and allow a short delay before refreshing the UI.
    - **401 / 403** — API key rejected or not authorised for that intake; regenerate or copy the key from [API Keys](https://docs.datadoghq.com/account_management/api-app-keys/).
-   - **404 or other 4xx / 5xx** — often a **wrong intake host for your site**. The URL in `SendCheckpoint.cs` is hardcoded to the **US3** trace agent (`trace.agent.us3.datadoghq.com`). Your organisation may use another [Datadog site](https://docs.datadoghq.com/getting_started/site/) (for example US1, EU, or another region). Update `PipelineStatsUrl` in `SendCheckpoint.cs` until the **Status** is 2xx.
+   - **404 or other 4xx / 5xx** — often a **wrong intake host for your site**. The URL in `Program.cs` is hardcoded to the **US3** trace agent (`trace.agent.us3.datadoghq.com`). Your organisation may use another [Datadog site](https://docs.datadoghq.com/getting_started/site/) (for example US1, EU, or another region). Update `PipelineStatsUrl` in `Program.cs` until the **Status** is 2xx.
    - **Network or TLS errors** in the console (no HTTP status) — local firewall, proxy, or DNS blocking `trace.agent.*`; fix connectivity or try from another network.
 
-## Option 2: Using dd-trace-dotnet (Auto-Instrumentation)
+**Comparing with the agent path:** If you are unsure whether the problem is the direct URL or your account setup, run **Option 2** with a local Agent whose `DD_SITE` matches your organisation. If Option 2 works but Option 1 does not, the direct intake host in code is usually the mismatch—Option 2 relies on the Agent to route to the correct site.
 
-The .NET Datadog tracer uses **auto-instrumentation** for Data Streams Monitoring — it automatically instruments supported messaging libraries (Kafka, RabbitMQ, SQS, SNS, Kinesis, IBM MQ, Azure Service Bus) without manual API calls.
+## Option 2: Using dd-trace-dotnet
 
-Unlike the Node.js `dd-trace` library which exposes a `trackTransaction()` method, the .NET tracer handles checkpoint tracking internally when messages flow through supported libraries.
+Uses the [`Datadog.Trace`](https://www.nuget.org/packages/Datadog.Trace) NuGet package with the `SpanContextInjector.InjectIncludingDsm()` API to create a DSM checkpoint within a trace span. This is the recommended approach for production applications that already use `dd-trace-dotnet`.
 
-### Setup
+### Prerequisites (dd-trace)
 
-1. Install the [Datadog .NET Tracer](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/dd_libraries/dotnet-core/)
-2. Set the required environment variables:
+A running [Datadog Agent](https://docs.datadoghq.com/agent/) is required. The tracer sends data to the agent, which forwards it to Datadog.
+
+You can run the agent locally with Docker:
 
 ```bash
-export DD_DATA_STREAMS_ENABLED=true
-export DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED=true
+docker run -d \
+  --name dd-agent \
+  -e DD_API_KEY=$DD_API_KEY \
+  -e DD_SITE="us3.datadoghq.com" \
+  -e DD_HOSTNAME=dd-agent-local \
+  -e DD_APM_ENABLED=true \
+  -e DD_DATA_STREAMS_ENABLED=true \
+  -p 8126:8126 \
+  gcr.io/datadoghq/agent:latest
 ```
 
-3. Run your application with the tracer attached — DSM checkpoints are created automatically when messages are produced/consumed through supported libraries.
-
-> **Note:** Starting with .NET tracer v3.22.0, DSM is in a default-enabled state. Setting `DD_DATA_STREAMS_ENABLED=true` explicitly enables additional features like schema tracking.
-
-### Supported libraries
-
-| Technology | NuGet Package |
-|---|---|
-| Kafka | `Confluent.Kafka` |
-| RabbitMQ | `RabbitMQ.Client` |
-| Amazon SQS | `AWSSDK.SQS` |
-| Amazon SNS | `AWSSDK.SimpleNotificationService` |
-| Amazon Kinesis | `AWSSDK.Kinesis` |
-| IBM MQ | `IBMMQDotnetClient` |
-| Azure Service Bus | `Azure.Messaging.ServiceBus` |
-
-## Build
+### Usage
 
 ```bash
-# Build the project
-dotnet build
+cd SendCheckpointDdTrace
 
-# Run the compiled version
-dotnet run --no-build
+# Send a checkpoint with default name
+dotnet run
+
+# Send a checkpoint with a custom name
+dotnet run -- my-checkpoint
+
+# Send a checkpoint with a custom name and transaction ID
+dotnet run -- my-checkpoint my-transaction-123
+```
+
+### Example output
+
+```
+Sending checkpoint via dd-trace...
+  Trace agent: http://localhost:8126
+  Transaction ID: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  Checkpoint: test-checkpoint
+  Service: datadog-checkpoints-app
+  Environment: local
+  Checkpoint tracked on span
+Checkpoint sent successfully!
+Waiting for tracer to flush...
+```
+
+### How it works
+
+1. Uses `Tracer.Instance.StartActive()` to create a trace span
+2. Calls `SpanContextInjector.InjectIncludingDsm()` to set a DSM checkpoint on the span — this is the .NET equivalent of Node.js `tracer.dataStreamsCheckpointer.trackTransaction()`
+3. The tracer sends the data to the Datadog Agent, which forwards it to Datadog
+
+### Additional dd-trace environment variables
+
+| Environment Variable | Description | Default |
+|---|---|---|
+| `DD_AGENT_HOST` | Datadog Agent hostname | `localhost` |
+| `DD_TRACE_AGENT_PORT` | Datadog Agent trace port | `8126` |
+| `DD_TRACE_AGENT_URL` | Full URL to a remote Datadog Agent (overrides host/port) | — |
+| `DD_DATA_STREAMS_ENABLED` | Enable DSM (must be `true`) | `false` |
+
+## Using a Remote Datadog Agent
+
+### Option 1: Direct HTTP API (remote agent)
+
+No changes needed — Option 1 sends directly to Datadog's intake API, not via an agent.
+
+### Option 2: dd-trace (remote agent)
+
+Set `DD_TRACE_AGENT_URL` to point the tracer at the remote agent instead of `localhost:8126`:
+
+```bash
+export DD_TRACE_AGENT_URL="https://az-eun-development-datadog-agents-01.my.flipdishdev.com:443"
+
+cd SendCheckpointDdTrace
+dotnet run -- order-placed order-123
 ```
 
 ## Testing end-to-end
 
 ```bash
-# Send a first checkpoint
+# Option 1 (direct HTTP):
+cd SendCheckpoint
 dotnet run -- order-placed order-123
+dotnet run -- order-completed order-123
 
-# Send a second checkpoint for the same transaction
+# Option 2 (dd-trace, requires agent):
+cd SendCheckpointDdTrace
+dotnet run -- order-placed order-123
 dotnet run -- order-completed order-123
 ```
 
