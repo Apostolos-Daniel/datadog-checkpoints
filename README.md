@@ -20,6 +20,12 @@ npm install
 
 ## Configuration
 
+Set your Datadog API key in your terminal — all commands below will pick it up automatically:
+
+```bash
+export DD_API_KEY="your-api-key"
+```
+
 | Environment Variable | Description | Default |
 |---|---|---|
 | `DD_API_KEY` | **(Required)** Your Datadog API key | — |
@@ -33,8 +39,6 @@ Sends checkpoints directly to the Datadog pipeline stats API endpoint using HTTP
 ### Usage
 
 ```bash
-export DD_API_KEY="your-api-key"
-
 # Send a checkpoint with default name
 npm run send
 
@@ -77,7 +81,7 @@ You can run the agent locally with Docker:
 ```bash
 docker run -d \
   --name dd-agent \
-  -e DD_API_KEY="your-api-key" \
+  -e DD_API_KEY=$DD_API_KEY \
   -e DD_SITE="us3.datadoghq.com" \
   -e DD_APM_ENABLED=true \
   -e DD_DATA_STREAMS_ENABLED=true \
@@ -88,7 +92,6 @@ docker run -d \
 ### Usage
 
 ```bash
-export DD_API_KEY="your-api-key"
 
 # Send a checkpoint with default name
 npm run send:ddtrace
@@ -136,7 +139,7 @@ To test the `dd-trace` approach end-to-end:
 ```bash
 docker run -d \
   --name dd-agent \
-  -e DD_API_KEY="your-api-key" \
+  -e DD_API_KEY=$DD_API_KEY \
   -e DD_SITE="us3.datadoghq.com" \
   -e DD_APM_ENABLED=true \
   -e DD_DATA_STREAMS_ENABLED=true \
@@ -153,7 +156,6 @@ curl -s http://localhost:8126/info | head
 ### 3. Send a test checkpoint
 
 ```bash
-export DD_API_KEY="your-api-key"
 npm run send:ddtrace -- order-placed order-123
 ```
 
@@ -174,7 +176,6 @@ npm run send:ddtrace -- order-completed order-123
 If you don't have a Datadog Agent running, use **Option 1** (Direct HTTP API) instead — it sends checkpoints directly to Datadog without needing an agent:
 
 ```bash
-export DD_API_KEY="your-api-key"
 npm run send -- order-placed order-123
 npm run send -- order-completed order-123
 ```
