@@ -1,15 +1,19 @@
 # Datadog Checkpoints
 
-A simple TypeScript app that sends sample/test checkpoints to Datadog's [Data Streams Monitoring](https://docs.datadoghq.com/data_streams/) for Business Transaction Tracking.
+Sample apps that send test checkpoints to Datadog's [Data Streams Monitoring](https://docs.datadoghq.com/data_streams/) for Business Transaction Tracking.
+
+Available in **TypeScript/Node.js** (this directory) and **C# .NET** ([`dotnet/`](dotnet/)).
 
 Once checkpoints are sent, they appear under **Data Streams Monitoring > Transactions > Business Transaction Tracking** in Datadog:
 
 ![Business Transaction Tracking](docs/datadog-transactions.png)
 
-## Prerequisites
+## Prerequisites (TypeScript)
 
 - [Node.js](https://nodejs.org/) (v16+)
 - A [Datadog API key](https://docs.datadoghq.com/account_management/api-app-keys/)
+
+> For the C# .NET version, see [`dotnet/README.md`](dotnet/README.md).
 
 ## Setup
 
@@ -236,11 +240,18 @@ npm run send -- order-placed order-123
 npm run send -- order-completed order-123
 ```
 
-## .NET / C# Example
+## C# .NET Version
 
-A C# .NET equivalent of this app is available in the [`dotnet/`](dotnet/) directory. See the [dotnet/README.md](dotnet/README.md) for setup and usage instructions.
+The same checkpoint app is available as a standalone .NET 8 console app in [`dotnet/`](dotnet/). It implements the Direct HTTP API approach with zero NuGet dependencies:
 
-## Build
+```bash
+cd dotnet
+dotnet run -- order-placed order-123
+```
+
+See [`dotnet/README.md`](dotnet/README.md) for full setup, usage, and troubleshooting.
+
+## Build (TypeScript)
 
 ```bash
 # Compile TypeScript to JavaScript
