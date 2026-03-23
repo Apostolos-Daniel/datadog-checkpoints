@@ -72,6 +72,58 @@ The app prints the exact URL, HTTP **Status**, and **Response** body—those thr
    - **404 or other 4xx / 5xx** — often a **wrong intake host for your site**. The URL in `Program.cs` is hardcoded to the **US3** trace agent (`trace.agent.us3.datadoghq.com`). Your organisation may use another [Datadog site](https://docs.datadoghq.com/getting_started/site/) (for example US1, EU, or another region). Update `PipelineStatsUrl` in `Program.cs` until the **Status** is 2xx.
    - **Network or TLS errors** in the console (no HTTP status) — local firewall, proxy, or DNS blocking `trace.agent.*`; fix connectivity or try from another network.
 
+## Datadog Agent setup
+
+This app sends checkpoints directly to Datadog's intake API, so a Datadog Agent is **not required**. However, if you're running other Datadog-instrumented services (APM, logs, infrastructure monitoring), you'll want an agent running. Below are instructions for both local and remote setups.
+
+### Local agent (Docker)
+
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (macOS/Windows) or [Docker Engine](https://docs.docker.com/engine/install/) (Linux). Make sure Docker is running before proceeding.
+
+```bash
+docker run -d \
+  --name dd-agent \
+  -e DD_API_KEY=$DD_API_KEY \
+  -e DD_SITE="us3.datadoghq.com" \
+  -e DD_HOSTNAME=dd-agent-local \
+  -e DD_APM_ENABLED=true \
+  -e DD_DATA_STREAMS_ENABLED=true \
+  -p 8126:8126 \
+  gcr.io/datadoghq/agent:latest
+```
+
+> **Note:** Change `DD_SITE` to match your [Datadog site](https://docs.datadoghq.com/getting_started/site/) (e.g. `datadoghq.com` for US1, `datadoghq.eu` for EU).
+
+Verify the agent is running:
+
+```bash
+docker ps | grep dd-agent
+curl -s http://localhost:8126/info | head -20
+```
+
+### Remote agent
+
+If your team has a centralised agent running in a cloud environment, you can point to it instead of running one locally. For example:
+
+```
+https://az-eun-development-datadog-agents-01.my.flipdishdev.com:443
+```
+
+The remote agent URL is not used by this app directly (since it sends via the HTTP API), but it's useful when running other Datadog-instrumented services alongside this one.
+
+### Useful agent commands
+
+```bash
+# View agent logs
+docker logs dd-agent
+
+# Stop and remove the agent
+docker stop dd-agent && docker rm dd-agent
+
+# Check agent status
+docker exec dd-agent agent status
+```
+
 ## Why no dd-trace-dotnet option?
 
 Unlike the Node.js `dd-trace` library which exposes `tracer.dataStreamsCheckpointer.trackTransaction()` for manual transaction checkpoints, the .NET tracer (`Datadog.Trace`) **does not have an equivalent API**.
