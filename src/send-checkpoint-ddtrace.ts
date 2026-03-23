@@ -40,9 +40,14 @@ async function main() {
 
   console.log('Checkpoint sent successfully!');
 
-  // Allow time for the dd-trace agent to flush before exiting
-  console.log('Waiting for tracer to flush...');
-  await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+  // Flush the tracer to ensure all data is sent before exiting
+  console.log('Flushing tracer...');
+  await new Promise<void>((resolve) => {
+    (tracer as any).flush(() => {
+      console.log('Tracer flushed.');
+      resolve();
+    });
+  });
 }
 
 main();
