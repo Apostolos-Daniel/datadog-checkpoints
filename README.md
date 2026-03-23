@@ -76,6 +76,10 @@ Uses the official [`dd-trace`](https://github.com/DataDog/dd-trace-js) library w
 
 A running [Datadog Agent](https://docs.datadoghq.com/agent/) is required. The `dd-trace` library sends data to the local agent, which forwards it to Datadog.
 
+**Docker:** To run the agent in a container, install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (macOS and Windows) or [Docker Engine](https://docs.docker.com/engine/install/) (Linux) if you do not have Docker yet. Open **Docker Desktop** (or start your Docker daemon) and wait until it is running before you use `docker run`. If you see `Cannot connect to the Docker daemon`, the daemon is not running—start Docker Desktop and try again.
+
+On Docker Desktop (especially macOS), the agent can exit immediately if it cannot determine a hostname inside the container. The example below sets `DD_HOSTNAME` so the agent stays up.
+
 You can run the agent locally with Docker:
 
 ```bash
@@ -83,6 +87,7 @@ docker run -d \
   --name dd-agent \
   -e DD_API_KEY=$DD_API_KEY \
   -e DD_SITE="us3.datadoghq.com" \
+  -e DD_HOSTNAME=dd-agent-local \
   -e DD_APM_ENABLED=true \
   -e DD_DATA_STREAMS_ENABLED=true \
   -p 8126:8126 \
@@ -136,11 +141,14 @@ To test the `dd-trace` approach end-to-end:
 
 ### 1. Start a Datadog Agent
 
+Ensure Docker is running (install or start Docker Desktop as described under **Docker** in Option 2 above).
+
 ```bash
 docker run -d \
   --name dd-agent \
   -e DD_API_KEY=$DD_API_KEY \
   -e DD_SITE="us3.datadoghq.com" \
+  -e DD_HOSTNAME=dd-agent-local \
   -e DD_APM_ENABLED=true \
   -e DD_DATA_STREAMS_ENABLED=true \
   -p 8126:8126 \
