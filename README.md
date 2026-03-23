@@ -242,17 +242,14 @@ npm run send -- order-completed order-123
 
 ## C# .NET Version
 
-The same checkpoint app is available as standalone .NET 9 console apps in [`dotnet/`](dotnet/), with both options mirroring the TypeScript implementations:
+The same checkpoint app is available as a standalone .NET 9 console app in [`dotnet/`](dotnet/). It uses the Direct HTTP API approach (no agent needed, zero NuGet dependencies):
 
 ```bash
-# Option 1: Direct HTTP API (no agent needed)
 cd dotnet/SendCheckpoint
 dotnet run -- order-placed order-123
-
-# Option 2: dd-trace-dotnet (requires agent)
-cd dotnet/SendCheckpointDdTrace
-dotnet run -- order-placed order-123
 ```
+
+> **Note:** Unlike Node.js, the .NET tracer (`Datadog.Trace`) does not expose a `trackTransaction()` equivalent for manual checkpoints. See [`dotnet/README.md`](dotnet/README.md) for details.
 
 See [`dotnet/README.md`](dotnet/README.md) for full setup, usage, and troubleshooting.
 
