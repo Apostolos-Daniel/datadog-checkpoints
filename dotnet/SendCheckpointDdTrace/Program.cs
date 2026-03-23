@@ -47,9 +47,9 @@ public static class SendCheckpointDdTrace
 
         Console.WriteLine("Checkpoint sent successfully!");
 
-        // Allow time for the tracer to flush data to the agent before exiting
-        Console.WriteLine("Waiting for tracer to flush...");
-        await Task.Delay(3000);
+        Console.WriteLine("Flushing tracer...");
+        await Tracer.Instance.FlushAsync();
+        Console.WriteLine("Flush complete.");
 
         return 0;
     }

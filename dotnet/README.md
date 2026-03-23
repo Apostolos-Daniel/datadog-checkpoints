@@ -136,14 +136,16 @@ Sending checkpoint via dd-trace...
   Environment: local
   Checkpoint tracked on span
 Checkpoint sent successfully!
-Waiting for tracer to flush...
+Flushing tracer...
+Flush complete.
 ```
 
 ### How it works
 
 1. Uses `Tracer.Instance.StartActive()` to create a trace span
 2. Calls `SpanContextInjector.InjectIncludingDsm()` to set a DSM checkpoint on the span — this is the .NET equivalent of Node.js `tracer.dataStreamsCheckpointer.trackTransaction()`
-3. The tracer sends the data to the Datadog Agent, which forwards it to Datadog
+3. Calls `Tracer.Instance.FlushAsync()` to force the tracer to immediately send pending traces to the agent
+4. The Datadog Agent forwards the data to Datadog
 
 ### Additional dd-trace environment variables
 
