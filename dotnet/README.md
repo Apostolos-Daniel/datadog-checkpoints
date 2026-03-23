@@ -6,7 +6,7 @@ Once checkpoints are sent, they appear under **Data Streams Monitoring > Transac
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (or later)
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (or later)
 - A [Datadog API key](https://docs.datadoghq.com/account_management/api-app-keys/)
 
 ## Configuration
