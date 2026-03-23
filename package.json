@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "send": "ts-node src/send-checkpoint.ts",
+    "send:ddtrace": "ts-node src/send-checkpoint-ddtrace.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,5 +20,8 @@
     "@types/node": "^25.5.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "dd-trace": "^5.91.0"
   }
 }
