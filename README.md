@@ -236,6 +236,10 @@ npm run send -- order-placed order-123
 npm run send -- order-completed order-123
 ```
 
+## .NET / C# Example
+
+A C# .NET equivalent of this app is available in the [`dotnet/`](dotnet/) directory. See the [dotnet/README.md](dotnet/README.md) for setup and usage instructions.
+
 ## Build
 
 ```bash
