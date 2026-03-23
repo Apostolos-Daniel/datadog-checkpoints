@@ -40,14 +40,19 @@ async function main() {
 
   console.log('Checkpoint sent successfully!');
 
-  // Flush the tracer to ensure all data is sent before exiting
-  console.log('Flushing tracer...');
-  await new Promise<void>((resolve) => {
-    (tracer as any).flush(() => {
-      console.log('Tracer flushed.');
-      resolve();
-    });
-  });
+  // Flush the tracer to ensure all data is sent before exiting.
+  // dd-trace has no public tracer.flush() — the flush lives on the internal exporter.
+  // We try the internal path first; if it's unavailable we fall back to a 10s wait
+  // (dd-trace flushes every 2-10 seconds internally).
+  const exporter = (tracer as any)?._tracer?._exporter;
+  if (typeof exporter?.flush === 'function') {
+    console.log('Flushing tracer via exporter...');
+    await new Promise<void>((resolve) => exporter.flush(resolve));
+    console.log('Tracer flushed.');
+  } else {
+    console.log('Waiting 10 s for tracer to flush (no public flush API)...');
+    await new Promise<void>((resolve) => setTimeout(resolve, 10_000));
+  }
 }
 
 main();
