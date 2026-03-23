@@ -31,6 +31,7 @@ public static class SendCheckpoint
         var payload = BuildPayload(transactionId, checkpoint, service, environment);
 
         Console.WriteLine("Sending checkpoint to Datadog...");
+        Console.WriteLine($"  Endpoint (pipeline stats API): {PipelineStatsUrl}");
         Console.WriteLine($"  Transaction ID: {transactionId}");
         Console.WriteLine($"  Checkpoint: {checkpoint}");
         Console.WriteLine($"  Service: {service}");
