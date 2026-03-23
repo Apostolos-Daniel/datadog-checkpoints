@@ -1,6 +1,14 @@
 import tracer from 'dd-trace';
 import * as crypto from 'crypto';
 
+function traceAgentDestination(): string {
+  const fromEnv = process.env.DD_TRACE_AGENT_URL?.trim();
+  if (fromEnv) return fromEnv;
+  const host = process.env.DD_AGENT_HOST || 'localhost';
+  const port = process.env.DD_TRACE_AGENT_PORT || '8126';
+  return `http://${host}:${port}`;
+}
+
 // Initialize dd-trace with Data Streams Monitoring enabled
 tracer.init({
   service: process.env.DD_SERVICE || 'datadog-checkpoints-app',
@@ -18,6 +26,7 @@ async function main() {
   const transactionId = process.argv[3] || generateTransactionId();
 
   console.log('Sending checkpoint via dd-trace...');
+  console.log('  Trace agent:', traceAgentDestination());
   console.log('  Transaction ID:', transactionId);
   console.log('  Checkpoint:', checkpoint);
   console.log('  Service:', process.env.DD_SERVICE || 'datadog-checkpoints-app');

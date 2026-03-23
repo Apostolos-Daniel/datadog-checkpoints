@@ -87,6 +87,7 @@ async function main() {
   const payload = buildPayload(transactionId, checkpoint, service, environment);
 
   console.log('Sending checkpoint to Datadog...');
+  console.log('  Endpoint (pipeline stats API):', PIPELINE_STATS_URL);
   console.log('  Transaction ID:', transactionId);
   console.log('  Checkpoint:', checkpoint);
   console.log('  Service:', service);

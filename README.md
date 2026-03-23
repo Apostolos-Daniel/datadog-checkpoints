@@ -53,6 +53,7 @@ npm run send -- my-checkpoint my-transaction-123
 
 ```
 Sending checkpoint to Datadog...
+  Endpoint (pipeline stats API): https://trace.agent.us3.datadoghq.com/api/v0.1/pipeline_stats
   Transaction ID: a1b2c3d4-e5f6-7890-abcd-ef1234567890
   Checkpoint: test-checkpoint
   Service: datadog-checkpoints-app
@@ -67,6 +68,20 @@ Checkpoint sent successfully!
 1. Builds a checkpoint payload containing a transaction ID, checkpoint name, and nanosecond-precision timestamp
 2. Gzip-compresses the JSON payload
 3. Sends it via HTTPS POST to `https://trace.agent.us3.datadoghq.com/api/v0.1/pipeline_stats`
+
+### Testing Option 1 and when the direct URL fails
+
+Use Option 1 as the smoke test for the **direct pipeline stats intake** (no agent). The script prints the exact URL, HTTP **Status**, and **Response** body—those three lines tell you whether the call reached Datadog and how the API responded.
+
+1. **Set `DD_API_KEY`** (same key you use in the Datadog UI for your organisation).
+2. Run `npm run send` (or pass a checkpoint / transaction id as shown in [Usage](#usage)).
+3. **Read the output:**
+   - **Status in the 2xx range** — the HTTP request was accepted by that intake host. If checkpoints still do not show up under **Data Streams Monitoring > Transactions**, confirm you are logged into the same Datadog **site** and org, and allow a short delay before refreshing the UI.
+   - **401 / 403** — API key rejected or not authorised for that intake; regenerate or copy the key from [API Keys](https://docs.datadoghq.com/account_management/api-app-keys/).
+   - **404 or other 4xx / 5xx** — often a **wrong intake host for your site**. The URL in `src/send-checkpoint.ts` is hardcoded to the **US3** trace agent (`trace.agent.us3.datadoghq.com`). Your organisation may use another [Datadog site](https://docs.datadoghq.com/getting_started/site/) (for example US1, EU, or another region). The trace intake hostname must match that site (same pattern as your Agent `DD_SITE`: use the corresponding `trace.agent.*` host from Datadog’s documentation, or align with the host your Agent uses for trace traffic). Update `PIPELINE_STATS_URL` in `send-checkpoint.ts` until the **Status** is 2xx.
+   - **Network or TLS errors** in the console (no HTTP status) — local firewall, proxy, or DNS blocking `trace.agent.*`; fix connectivity or try from another network.
+
+**Comparing with the agent path:** If you are unsure whether the problem is the direct URL or your account setup, run **Option 2** with a local Agent whose `DD_SITE` matches your organisation (see [Option 2](#option-2-using-dd-trace) and [Testing with dd-trace](#testing-with-dd-trace)). If Option 2 works but Option 1 does not, the direct intake host in code is usually the mismatch—Option 2 relies on the Agent to route to the correct site.
 
 ## Option 2: Using dd-trace
 
@@ -112,6 +127,7 @@ npm run send:ddtrace -- my-checkpoint my-transaction-123
 
 ```
 Sending checkpoint via dd-trace...
+  Trace agent: http://localhost:8126
   Transaction ID: a1b2c3d4-e5f6-7890-abcd-ef1234567890
   Checkpoint: test-checkpoint
   Service: datadog-checkpoints-app
@@ -213,7 +229,7 @@ npm run send:ddtrace -- order-completed order-123
 
 ### Testing without a Datadog Agent
 
-If you don't have a Datadog Agent running, use **Option 1** (Direct HTTP API) instead — it sends checkpoints directly to Datadog without needing an agent:
+If you don't have a Datadog Agent running, you can use **Option 1** (Direct HTTP API) — it sends checkpoints straight to Datadog’s pipeline stats intake without an agent. That only works when the **endpoint in `send-checkpoint.ts` matches your Datadog site**; if `npm run send` does not return a 2xx status, follow [Testing Option 1 and when the direct URL fails](#testing-option-1-and-when-the-direct-url-fails) or use Option 2 with an Agent (including a [remote agent](#option-2-dd-trace-remote-agent)) so `DD_SITE` selects the correct region.
 
 ```bash
 npm run send -- order-placed order-123
