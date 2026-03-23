@@ -133,7 +133,39 @@ Waiting for tracer to flush...
 |---|---|---|
 | `DD_AGENT_HOST` | Datadog Agent hostname | `localhost` |
 | `DD_TRACE_AGENT_PORT` | Datadog Agent trace port | `8126` |
+| `DD_TRACE_AGENT_URL` | Full URL to a remote Datadog Agent (overrides host/port) | — |
 | `DD_DATA_STREAMS_ENABLED` | Enable DSM (alternative to code config) | `false` |
+
+## Using a Remote Datadog Agent
+
+Instead of running a local Datadog Agent, you can point to a remote/shared agent. This is useful when your team has a centralised agent running in a cloud environment.
+
+### Option 1: Direct HTTP API (remote agent)
+
+No changes needed — Option 1 sends directly to Datadog's intake API, not via an agent. It works the same regardless of whether you have a local agent.
+
+### Option 2: dd-trace (remote agent)
+
+Set `DD_TRACE_AGENT_URL` to point `dd-trace` at the remote agent instead of `localhost:8126`:
+
+```bash
+export DD_TRACE_AGENT_URL="https://az-eun-development-datadog-agents-01.my.flipdishdev.com:443"
+
+npm run send:ddtrace -- order-placed order-123
+```
+
+This is equivalent to initialising `dd-trace` with the `url` option in code:
+
+```javascript
+require('dd-trace').init({
+  logInjection: true,
+  service: process.env.DD_SERVICE || 'RMS.SERVICES.JOBS',
+  env: process.env.DD_ENV || 'local',
+  url: process.env.DD_TRACE_AGENT_URL || 'https://az-eun-development-datadog-agents-01.my.flipdishdev.com:443',
+});
+```
+
+When `DD_TRACE_AGENT_URL` is set, it overrides `DD_AGENT_HOST` and `DD_TRACE_AGENT_PORT`. No local Docker agent is needed.
 
 ## Testing with dd-trace
 

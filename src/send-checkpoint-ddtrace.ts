@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 tracer.init({
   service: process.env.DD_SERVICE || 'datadog-checkpoints-app',
   env: process.env.DD_ENV || 'local',
+  url: process.env.DD_TRACE_AGENT_URL || undefined,
   dsmEnabled: true,
 });
 
